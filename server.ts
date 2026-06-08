@@ -440,20 +440,24 @@ app.get("/api/exercises/search", async (req, res) => {
       results = [...FALLBACK_EXERCISES];
     }
 
-    // Apply filters
+    const baselineSet = [...results];
+
+    // Try standard filtering
+    let filtered = [...results];
+    
     if (filterBodyPart && filterBodyPart !== "all") {
-      results = results.filter(ex => ex.bodyPart && ex.bodyPart.toLowerCase() === filterBodyPart);
+      filtered = filtered.filter(ex => ex.bodyPart && ex.bodyPart.toLowerCase() === filterBodyPart);
     }
     if (filterMuscle && filterMuscle !== "all") {
-      results = results.filter(ex => ex.target && ex.target.toLowerCase() === filterMuscle);
+      filtered = filtered.filter(ex => ex.target && ex.target.toLowerCase() === filterMuscle);
     }
     if (filterEquipment && filterEquipment !== "all") {
-      results = results.filter(ex => ex.equipment && ex.equipment.toLowerCase() === filterEquipment);
+      filtered = filtered.filter(ex => ex.equipment && ex.equipment.toLowerCase() === filterEquipment);
     }
 
     // Apply text search
     if (query) {
-      results = results.filter(ex => {
+      filtered = filtered.filter(ex => {
         const nameMatch = ex.name && ex.name.toLowerCase().includes(query);
         const partMatch = ex.bodyPart && ex.bodyPart.toLowerCase().includes(query);
         const targetMatch = ex.target && ex.target.toLowerCase().includes(query);
@@ -461,6 +465,40 @@ app.get("/api/exercises/search", async (req, res) => {
         return nameMatch || partMatch || targetMatch || eqMatch;
       });
     }
+
+    // If 0 results found, start relaxing filters!
+    if (filtered.length === 0) {
+      console.log("No results for strict filter. Relaxing equipment constraint...");
+      filtered = [...results];
+      if (filterBodyPart && filterBodyPart !== "all") {
+        filtered = filtered.filter(ex => ex.bodyPart && ex.bodyPart.toLowerCase() === filterBodyPart);
+      }
+      if (filterMuscle && filterMuscle !== "all") {
+        filtered = filtered.filter(ex => ex.target && ex.target.toLowerCase() === filterMuscle);
+      }
+      if (query) {
+        filtered = filtered.filter(ex => ex.name && ex.name.toLowerCase().includes(query));
+      }
+    }
+
+    // If still 0, relax muscle constraint and keep body part only
+    if (filtered.length === 0) {
+      console.log("Still no results. Relaxing muscle constraint...");
+      filtered = [...results];
+      if (filterBodyPart && filterBodyPart !== "all") {
+        filtered = filtered.filter(ex => ex.bodyPart && ex.bodyPart.toLowerCase() === filterBodyPart);
+      } else if (filterMuscle && filterMuscle !== "all") {
+        filtered = filtered.filter(ex => ex.target && ex.target.toLowerCase() === filterMuscle);
+      }
+    }
+
+    // If still 0, return all baseline exercises
+    if (filtered.length === 0) {
+      console.log("Fallback to all exercises.");
+      filtered = baselineSet;
+    }
+
+    results = filtered;
   }
 
   // Limit to 40 results max per search for client performance & speed

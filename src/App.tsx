@@ -960,14 +960,14 @@ export default function App() {
 
         {/* ERROR OR ZERO BLOCKS WARNING */}
         {errorMsg && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-200 p-5 rounded-xl flex items-start gap-3.5 mb-10">
-            <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+          <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-200 p-5 rounded-xl flex items-start gap-3.5 mb-10">
+            <Info className="w-5 h-5 text-yellow-400 shrink-0 mt-0.5" />
             <div>
-              <h4 className="font-bold text-sm">Fallo de Consenso de Red</h4>
-              <p className="text-xs text-red-300/90 mt-1 leading-relaxed">{errorMsg}</p>
+              <h4 className="font-bold text-sm text-yellow-300">Modo de Respaldo Fuera de Línea</h4>
+              <p className="text-xs text-yellow-400/90 mt-1 leading-relaxed">{errorMsg}</p>
               <button 
                 onClick={handleClearFilters}
-                className="mt-3.5 px-3.5 py-1.5 text-[11px] font-mono bg-red-950/40 hover:bg-red-900/50 border border-red-800/40 rounded transition uppercase font-bold"
+                className="mt-3.5 px-3.5 py-1.5 text-[11px] font-mono bg-yellow-950/40 hover:bg-yellow-900/50 border border-yellow-800/40 rounded transition uppercase font-bold text-yellow-300 cursor-pointer"
               >
                 Resetear Filtros y Reintentar
               </button>
