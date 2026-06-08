@@ -278,10 +278,49 @@ loadExercisesToCache().catch(console.error);
 
 // API Endpoint: Categories (Body parts, muscles, equipment)
 app.get("/api/exercises/categories", async (req, res) => {
-  // Return high-efficiency lists with quick translations
-  const bodyPartsEs = BODY_PARTS.map(part => ({ key: part, name: CATEGORY_TRANSLATIONS[part] || part }));
-  const musclesEs = MUSCLES.map(target => ({ key: target, name: CATEGORY_TRANSLATIONS[target] || target }));
-  const equipmentsEs = EQUIPMENTS.map(eq => ({ key: eq, name: CATEGORY_TRANSLATIONS[eq] || eq }));
+  // If cache is empty and not loading, trigger a load
+  if (exerciseCache.length === 0 && !isCacheLoading) {
+    await loadExercisesToCache();
+  }
+  
+  // Wait a short time if it is currently loading to avoid getting empty results during startup
+  let attempts = 0;
+  while (isCacheLoading && exerciseCache.length === 0 && attempts < 10) {
+    await new Promise(resolve => setTimeout(resolve, 200));
+    attempts++;
+  }
+
+  // Find all actual active values in the cached exercises
+  const activeBodyParts = new Set<string>();
+  const activeMuscles = new Set<string>();
+  const activeEquipments = new Set<string>();
+
+  exerciseCache.forEach(ex => {
+    if (ex.bodyPart) activeBodyParts.add(ex.bodyPart.toLowerCase().trim());
+    if (ex.target) activeMuscles.add(ex.target.toLowerCase().trim());
+    if (ex.equipment) activeEquipments.add(ex.equipment.toLowerCase().trim());
+  });
+
+  const bodyPartsList = activeBodyParts.size > 0 ? Array.from(activeBodyParts) : BODY_PARTS;
+  const musclesList = activeMuscles.size > 0 ? Array.from(activeMuscles) : MUSCLES;
+  const equipmentsList = activeEquipments.size > 0 ? Array.from(activeEquipments) : EQUIPMENTS;
+
+  bodyPartsList.sort();
+  musclesList.sort();
+  equipmentsList.sort();
+
+  const bodyPartsEs = bodyPartsList.map(part => ({
+    key: part,
+    name: CATEGORY_TRANSLATIONS[part] || part.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+  }));
+  const musclesEs = musclesList.map(target => ({
+    key: target,
+    name: CATEGORY_TRANSLATIONS[target] || target.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+  }));
+  const equipmentsEs = equipmentsList.map(eq => ({
+    key: eq,
+    name: CATEGORY_TRANSLATIONS[eq] || eq.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+  }));
 
   res.json({
     bodyParts: bodyPartsEs,
